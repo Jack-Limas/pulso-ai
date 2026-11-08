@@ -6,7 +6,7 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
-src/pulso_ai/gen/
+src/pulso/
 
 .env
 .env.*
