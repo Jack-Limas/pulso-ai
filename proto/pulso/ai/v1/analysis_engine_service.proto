@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package pulso.ai.v1;
+
+enum AnalysisStage {
+  ANALYSIS_STAGE_UNSPECIFIED = 0;
+  ANALYSIS_STAGE_CATEGORIZING = 1;
+  ANALYSIS_STAGE_DETECTING_ANOMALIES = 2;
+  ANALYSIS_STAGE_FINDING_PATTERNS = 3;
+  ANALYSIS_STAGE_FORECASTING = 4;
+  ANALYSIS_STAGE_RECOMMENDING = 5;
+}
+
+enum EntryType {
+  ENTRY_TYPE_UNSPECIFIED = 0;
+  ENTRY_TYPE_INCOME = 1;
+  ENTRY_TYPE_EXPENSE = 2;
+}
+
+enum CategorizationMethod {
+  CATEGORIZATION_METHOD_UNSPECIFIED = 0;
+  CATEGORIZATION_METHOD_RULE = 1;
+  CATEGORIZATION_METHOD_MODEL = 2;
+}
+
+message Entry {
+  string id = 1;
+  string occurred_on = 2;
+  string description = 3;
+  EntryType type = 4;
+  int64 amount_cents = 5;
+}
+
+message CategorizedEntry {
+  string entry_id = 1;
+  string merchant = 2;
+  string category_code = 3;
+  CategorizationMethod method = 4;
+}
+
+message AnomalyFinding {
+  string entry_id = 1;
+  string reason = 2;
+  double score = 3;
+}
+
+message RecurringFinding {
+  string merchant = 1;
+  int64 average_cents = 2;
+  int32 interval_days = 3;
+  int32 occurrences = 4;
+}
+
+message AntExpenseFinding {
+  string merchant = 1;
+  string category_code = 2;
+  int32 count = 3;
+  int64 total_cents = 4;
+  int64 average_cents = 5;
+  string period_start = 6;
+  string period_end = 7;
+}
+
+message Forecast {
+  int64 expected_income_cents = 1;
+  int64 expected_expense_cents = 2;
+  int64 projected_cents = 3;
+  int64 daily_trend_cents = 4;
+}
+
+message Advice {
+  string title = 1;
+  string detail = 2;
+}
+
+message AnalysisReport {
+  repeated CategorizedEntry categorized_entries = 1;
+  repeated AnomalyFinding anomalies = 2;
+  repeated RecurringFinding recurring = 3;
+  repeated AntExpenseFinding ant_expenses = 4;
+  Forecast forecast = 5;
+  repeated Advice advice = 6;
+}
+
+message AnalyzeStatementRequest {
+  repeated Entry entries = 1;
+  int64 current_balance_cents = 2;
+  string period_end = 3;
+  // BCP 47 language for generated text, such as "es" or "en".
+  string locale = 4;
+}
+
+// Each message is either a progress update or the final report.
+message AnalyzeStatementResponse {
+  oneof event {
+    AnalysisStage stage = 1;
+    AnalysisReport report = 2;
+  }
+}
+
+service AnalysisEngineService {
+  rpc AnalyzeStatement(AnalyzeStatementRequest) returns (stream AnalyzeStatementResponse);
+}
