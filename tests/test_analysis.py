@@ -103,6 +103,30 @@ class TestAnomalies:
         assert [item.entry_id for item in found] == [outlier.id]
         assert "promedio" in found[0].reason
 
+    def test_flags_an_outlier_in_a_small_group(self):
+        normal = [expense(f"T{i}", 800_000 + i * 1000) for i in range(6)]
+        outlier = expense("REGALO", 95_000_000)
+        entries = [*normal, outlier]
+
+        found = detect_anomalies(entries, as_category(entries), "es")
+
+        assert [item.entry_id for item in found] == [outlier.id]
+
+    def test_flags_an_outlier_when_every_other_amount_is_identical(self):
+        normal = [expense(f"T{i}", 1_000_000) for i in range(6)]
+        outlier = expense("REGALO", 9_000_000)
+        entries = [*normal, outlier]
+
+        assert [a.entry_id for a in detect_anomalies(entries, as_category(entries), "es")] == [
+            outlier.id
+        ]
+
+    def test_slightly_higher_amount_is_normal(self):
+        entries = [expense(f"T{i}", 1_000_000 + i) for i in range(6)]
+        entries.append(expense("T9", 1_010_000))
+
+        assert detect_anomalies(entries, as_category(entries), "es") == []
+
     def test_flags_second_charge_of_a_duplicate(self):
         first = expense("NETFLIX", 4_000_000, date(2026, 10, 1))
         second = expense("NETFLIX", 4_000_000, date(2026, 10, 2))
