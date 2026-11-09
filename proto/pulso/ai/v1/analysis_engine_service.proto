@@ -29,6 +29,7 @@ message Entry {
   string description = 3;
   EntryType type = 4;
   int64 amount_cents = 5;
+  string merchant = 6;
 }
 
 message CategorizedEntry {
@@ -88,6 +89,8 @@ message AnalyzeStatementRequest {
   string period_end = 3;
   // BCP 47 language for generated text, such as "es" or "en".
   string locale = 4;
+  // Categories the user already taught the system, by merchant.
+  map<string, string> known_categories = 5;
 }
 
 // Each message is either a progress update or the final report.
