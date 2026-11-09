@@ -1,13 +1,15 @@
 from collections import Counter, defaultdict
-from statistics import fmean, pstdev
+from statistics import fmean, median
 
 import numpy as np
 from sklearn.ensemble import IsolationForest
 
 from pulso_ai.domain import Anomaly, CategorizedEntry, Entry, EntryKind
 
-MIN_SAMPLES_FOR_ZSCORE = 5
-ZSCORE_THRESHOLD = 2.5
+MIN_SAMPLES_FOR_OUTLIER = 5
+MODIFIED_ZSCORE_THRESHOLD = 3.5
+MODIFIED_ZSCORE_SCALE = 0.6745
+MIN_RATIO_TO_MEDIAN = 2
 DUPLICATE_WINDOW_DAYS = 2
 MIN_HISTORY_FOR_NEW_FEE = 10
 MIN_SAMPLES_FOR_FOREST = 30
@@ -57,18 +59,27 @@ def _high_amounts(
     for entry in expenses:
         by_category[category_of.get(entry.id, "other")].append(entry)
 
+    # Median based: in a small group, one huge charge inflates the mean and standard deviation
+    # enough to hide itself, while the median and its deviation barely move.
     anomalies = []
     for group in by_category.values():
-        if len(group) < MIN_SAMPLES_FOR_ZSCORE:
+        if len(group) < MIN_SAMPLES_FOR_OUTLIER:
             continue
         amounts = [entry.amount_cents for entry in group]
-        mean, deviation = fmean(amounts), pstdev(amounts)
-        if deviation == 0:
-            continue
+        center = median(amounts)
+        spread = median(abs(amount - center) for amount in amounts)
+        total = sum(amounts)
         for entry in group:
-            score = (entry.amount_cents - mean) / deviation
-            if score >= ZSCORE_THRESHOLD:
-                reason = texts["high"].format(avg=_money(mean))
+            if entry.amount_cents < center * MIN_RATIO_TO_MEDIAN:
+                continue
+            score = (
+                MODIFIED_ZSCORE_SCALE * (entry.amount_cents - center) / spread
+                if spread
+                else entry.amount_cents / center
+            )
+            if not spread or score >= MODIFIED_ZSCORE_THRESHOLD:
+                others_average = (total - entry.amount_cents) / (len(group) - 1)
+                reason = texts["high"].format(avg=_money(others_average))
                 anomalies.append(Anomaly(entry.id, reason, round(score, 2)))
     return anomalies
 
