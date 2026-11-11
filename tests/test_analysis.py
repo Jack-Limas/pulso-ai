@@ -260,6 +260,14 @@ class TestAdvice:
 
         assert advice[0].title == "Ahorra"
 
+    def test_model_receives_amounts_in_pesos(self):
+        model = StubModel([])
+
+        GeminiAdvisor(model, RuleAdvisor()).advise(summary(total_expense_cents=125_000_000))
+
+        assert '"total_expense": 1250000' in model.prompts[0]
+        assert "alimentación" in model.prompts[0]
+
     def test_model_advice_wrapped_in_an_object_is_accepted(self):
         model = StubModel({"tips": [{"title": "Ahorra", "detail": "Cocina en casa"}]})
 
