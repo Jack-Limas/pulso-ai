@@ -135,7 +135,8 @@ def driver(rng: random.Random, year: int, month: int) -> list[Movement]:
         Movement(days[11], "TIGO PLAN DATOS", -_pesos(55_000)),
     ]
     for day in days[::2]:
-        moves.append(Movement(day, "PAGO UBER DRIVER", _pesos(rng.randint(140_000, 260_000))))
+        earnings = _pesos(rng.randint(140_000, 260_000))
+        moves.append(Movement(day, "PAGO UBER DRIVER", earnings))
     for day in rng.sample(days, 9):
         moves.append(Movement(day, "GASOLINA TERPEL", -_pesos(rng.randint(70_000, 110_000))))
     for day in rng.sample(days, 7):
