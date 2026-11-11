@@ -32,14 +32,14 @@ TEXTS = {
 
 CATEGORY_NAMES = {
     "es": {
-        "food": "alimentación",
+        "food": "alimentaciÃ³n",
         "transport": "transporte",
         "housing": "vivienda",
         "entertainment": "entretenimiento",
         "utilities": "servicios",
         "health": "salud",
-        "education": "educación",
-        "technology": "tecnología",
+        "education": "educaciÃ³n",
+        "technology": "tecnologÃ­a",
         "shopping": "compras",
         "other": "otros",
     },
