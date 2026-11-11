@@ -171,9 +171,10 @@ def teacher(rng: random.Random, year: int, month: int) -> list[Movement]:
 
 def doctor(rng: random.Random, year: int, month: int) -> list[Movement]:
     days = _month_days(year, month)
+    private_practice = _pesos(rng.randint(2_000_000, 3_800_000))
     moves = [
         Movement(days[0], "HONORARIOS CLINICA CENTRAL", _pesos(11_500_000)),
-        Movement(days[15], "HONORARIOS CONSULTA PRIVADA", _pesos(rng.randint(2_000_000, 3_800_000))),
+        Movement(days[15], "HONORARIOS CONSULTA PRIVADA", private_practice),
         Movement(days[5], "CUOTA HIPOTECA APARTAMENTO", -_pesos(3_600_000)),
         Movement(days[7], "MEDISALUD POLIZA", -_pesos(420_000)),
         Movement(days[8], "NETFLIX COM", -_pesos(44_900)),
