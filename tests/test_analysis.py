@@ -128,6 +128,23 @@ class TestAnomalies:
 
         assert detect_anomalies(entries, as_category(entries), "es") == []
 
+    def test_usual_amount_at_a_known_merchant_is_not_an_outlier(self):
+        coffees = [expense("CAFE", 800_000 + i * 1000) for i in range(8)]
+        deliveries = [expense("RAPPI", 3_500_000 + i * 1000) for i in range(4)]
+        entries = [*coffees, *deliveries]
+
+        assert detect_anomalies(entries, as_category(entries), "es") == []
+
+    def test_unusual_amount_at_a_known_merchant_is_still_flagged(self):
+        deliveries = [expense("RAPPI", 3_500_000 + i * 1000) for i in range(4)]
+        party = expense("RAPPI", 40_000_000)
+        coffees = [expense("CAFE", 800_000 + i * 1000) for i in range(4)]
+        entries = [*coffees, *deliveries, party]
+
+        found = detect_anomalies(entries, as_category(entries), "es")
+
+        assert [item.entry_id for item in found] == [party.id]
+
     def test_flags_second_charge_of_a_duplicate(self):
         first = expense("NETFLIX", 4_000_000, date(2026, 10, 1))
         second = expense("NETFLIX", 4_000_000, date(2026, 10, 2))
