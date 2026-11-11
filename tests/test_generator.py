@@ -29,6 +29,8 @@ def test_october_hides_the_planted_findings():
     assert descriptions["docente"].count("SMARTFIT MEMBRESIA") == 2
     assert "AVIANCA TIQUETES INTERNACIONALES" in descriptions["medica"]
     assert "COMISION TRANSFERENCIA INTERNACIONAL" in descriptions["emprendedora"]
+    assert descriptions["disenadora"].count("ADOBE CREATIVE CLOUD") == 2
+    assert "MACBOOK PRO TIENDA APPLE" in descriptions["disenadora"]
 
 
 def test_writes_one_pdf_per_profile_and_month(tmp_path):
