@@ -33,14 +33,15 @@ REASONS = {
 }
 
 
-def _money(cents: float) -> str:
-    return f"${cents / 100:,.0f}"
+def _money(cents: float, locale: str) -> str:
+    text = f"${cents / 100:,.0f}"
+    return text.replace(",", ".") if locale == "es" else text
 
 
 def detect_anomalies(
     entries: list[Entry], categorized: list[CategorizedEntry], locale: str
 ) -> list[Anomaly]:
-    texts = REASONS.get(locale, REASONS["es"])
+    texts = REASONS.get(locale, REASONS["es"]) | {"locale": locale}
     category_of = {item.entry_id: item.category for item in categorized}
     expenses = [entry for entry in entries if entry.kind is EntryKind.EXPENSE]
 
@@ -79,7 +80,7 @@ def _high_amounts(
             )
             if not spread or score >= MODIFIED_ZSCORE_THRESHOLD:
                 others_average = (total - entry.amount_cents) / (len(group) - 1)
-                reason = texts["high"].format(avg=_money(others_average))
+                reason = texts["high"].format(avg=_money(others_average, texts["locale"]))
                 anomalies.append(Anomaly(entry.id, reason, round(score, 2)))
     return anomalies
 

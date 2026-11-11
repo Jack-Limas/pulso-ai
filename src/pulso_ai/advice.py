@@ -30,8 +30,9 @@ TEXTS = {
 }
 
 
-def _money(cents: int) -> str:
-    return f"${cents / 100:,.0f}"
+def _money(cents: int, locale: str) -> str:
+    text = f"${cents / 100:,.0f}"
+    return text.replace(",", ".") if locale == "es" else text
 
 
 class Advisor(Protocol):
@@ -55,11 +56,11 @@ class RuleAdvisor:
         if summary.anomaly_count:
             advice.append(build("anomalies", count=summary.anomaly_count))
         if summary.recurring_total_cents:
-            advice.append(build("recurring", amount=_money(summary.recurring_total_cents)))
+            advice.append(build("recurring", amount=_money(summary.recurring_total_cents, summary.locale)))
         if summary.ant_total_cents:
-            advice.append(build("ant", amount=_money(summary.ant_total_cents)))
+            advice.append(build("ant", amount=_money(summary.ant_total_cents, summary.locale)))
         if summary.projected_cents < 0:
-            advice.append(build("negative", amount=_money(summary.projected_cents)))
+            advice.append(build("negative", amount=_money(summary.projected_cents, summary.locale)))
         return advice[:MAX_ADVICE]
 
 
