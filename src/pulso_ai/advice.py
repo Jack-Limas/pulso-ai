@@ -30,8 +30,26 @@ TEXTS = {
 }
 
 
+CATEGORY_NAMES = {
+    "es": {
+        "food": "alimentación",
+        "transport": "transporte",
+        "housing": "vivienda",
+        "entertainment": "entretenimiento",
+        "utilities": "servicios",
+        "health": "salud",
+        "education": "educación",
+        "technology": "tecnología",
+        "shopping": "compras",
+        "other": "otros",
+    },
+    "en": {"utilities": "utilities", "other": "other"},
+}
+
+
 def _money(cents: int, locale: str) -> str:
-    text = f"${cents / 100:,.0f}"
+    sign = "-" if cents < 0 else ""
+    text = f"{sign}${abs(cents) / 100:,.0f}"
     return text.replace(",", ".") if locale == "es" else text
 
 
@@ -55,7 +73,8 @@ class RuleAdvisor:
             name, total = max(summary.expense_by_category.items(), key=lambda item: item[1])
             share = total / summary.total_expense_cents
             if share >= DOMINANT_CATEGORY_RATIO:
-                advice.append(build("category", name=name, share=round(share * 100)))
+                label = CATEGORY_NAMES.get(summary.locale, {}).get(name, name)
+                advice.append(build("category", name=label, share=round(share * 100)))
         if summary.anomaly_count:
             advice.append(build("anomalies", count=summary.anomaly_count))
         if summary.recurring_total_cents:

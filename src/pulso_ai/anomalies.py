@@ -34,7 +34,7 @@ REASONS = {
 
 
 def _money(cents: float, locale: str) -> str:
-    text = f"${cents / 100:,.0f}"
+    text = f"{'-' if cents < 0 else ''}${abs(cents) / 100:,.0f}"
     return text.replace(",", ".") if locale == "es" else text
 
 
