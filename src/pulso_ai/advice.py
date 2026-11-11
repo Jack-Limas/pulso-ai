@@ -109,6 +109,9 @@ class GeminiAdvisor:
             f"Data: {json.dumps(asdict(summary))}"
         )
         answer = self._model.generate_json(prompt)
+        # Models sometimes wrap the list, as in {"tips": [...]}; the first list found is used.
+        if isinstance(answer, dict):
+            answer = next((value for value in answer.values() if isinstance(value, list)), None)
         if not isinstance(answer, list):
             return []
         return [
