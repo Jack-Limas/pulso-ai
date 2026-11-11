@@ -236,10 +236,15 @@ class TestForecast:
 
 
 class TestAdvice:
-    def test_points_at_the_dominant_category(self):
+    def test_points_at_the_dominant_category_in_the_user_language(self):
         [advice] = RuleAdvisor().advise(summary())
 
-        assert "food" in advice.title
+        assert advice.title == "Reduce gastos en alimentación"
+
+    def test_negative_amounts_put_the_sign_before_the_currency(self):
+        advice = RuleAdvisor().advise(summary(expense_by_category={}, projected_cents=-75_000_000))
+
+        assert advice[0].detail.endswith("-$750.000.")
 
     def test_warns_about_a_negative_projection_in_english(self):
         advice = RuleAdvisor().advise(
@@ -262,4 +267,4 @@ class TestAdvice:
     def test_bad_model_output_falls_back_to_rules(self, model):
         advice = GeminiAdvisor(model, RuleAdvisor()).advise(summary())
 
-        assert "food" in advice[0].title
+        assert "alimentación" in advice[0].title
