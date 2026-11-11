@@ -53,6 +53,20 @@ def _money(cents: int, locale: str) -> str:
     return text.replace(",", ".") if locale == "es" else text
 
 
+def _in_pesos(summary: FinancialSummary) -> dict[str, object]:
+    """Models handle whole pesos far better than cents, so amounts are converted first."""
+    names = CATEGORY_NAMES.get(summary.locale, {})
+    data = {
+        key.removesuffix("_cents"): round(value / 100) if key.endswith("_cents") else value
+        for key, value in asdict(summary).items()
+    }
+    data["expense_by_category"] = {
+        names.get(code, code): round(cents / 100)
+        for code, cents in summary.expense_by_category.items()
+    }
+    return data
+
+
 class Advisor(Protocol):
     def advise(self, summary: FinancialSummary) -> list[Advice]: ...
 
@@ -102,11 +116,11 @@ class GeminiAdvisor:
 
     def _ask_model(self, summary: FinancialSummary) -> list[Advice]:
         prompt = (
-            "You are a personal finance assistant. Using only these aggregates in COP cents, "
-            f"write up to {MAX_ADVICE} concrete savings or budgeting tips in language "
-            f"'{summary.locale}'. Do not invent figures.\n"
+            "You are a personal finance assistant. Using only these aggregates in Colombian "
+            f"pesos, write up to {MAX_ADVICE} concrete savings or budgeting tips in language "
+            f"'{summary.locale}'. Write amounts like $1.250.000 and do not invent figures.\n"
             'Answer with a JSON array like [{"title": "...", "detail": "..."}].\n'
-            f"Data: {json.dumps(asdict(summary))}"
+            f"Data: {json.dumps(_in_pesos(summary), ensure_ascii=False)}"
         )
         answer = self._model.generate_json(prompt)
         # Models sometimes wrap the list, as in {"tips": [...]}; the first list found is used.
