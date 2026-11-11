@@ -7,4 +7,4 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     internal_api_key: str = Field(min_length=32)
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-3.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
