@@ -210,6 +210,27 @@ def online_shop(rng: random.Random, year: int, month: int) -> list[Movement]:
     return moves
 
 
+def designer(rng: random.Random, year: int, month: int) -> list[Movement]:
+    days = _month_days(year, month)
+    moves = [
+        Movement(days[3], "ADOBE CREATIVE CLOUD", -_pesos(239_000)),
+        Movement(days[3], "FIGMA PROFESIONAL", -_pesos(64_000)),
+        Movement(days[6], "PAGO ARRIENDO ESTUDIO", -_pesos(1_450_000)),
+        Movement(days[10], "ENERGIA HOGAR", -_pesos(rng.randint(110_000, 150_000))),
+    ]
+    for _ in range(rng.randint(3, 5)):
+        amount = _pesos(rng.randrange(900_000, 2_800_000, 50_000))
+        moves.append(Movement(rng.choice(days), "PAGO CLIENTE DISENO", amount))
+    for day in rng.sample(days, 9):
+        moves.append(Movement(day, "CAFE TOSTAO", -_pesos(rng.randint(4_500, 7_500))))
+    for day in rng.sample(days, 5):
+        moves.append(Movement(day, "RAPPI RESTAURANTE", -_pesos(rng.randint(24_000, 39_000))))
+    if month == 10:
+        moves.append(Movement(days[4], "ADOBE CREATIVE CLOUD", -_pesos(239_000)))
+        moves.append(Movement(days[19], "MACBOOK PRO TIENDA APPLE", -_pesos(9_900_000)))
+    return moves
+
+
 def heavy(rng: random.Random, year: int, month: int) -> list[Movement]:
     """Two thousand movements, so the main thread versus Web Worker difference is visible."""
     days = _month_days(year, month)
@@ -230,6 +251,7 @@ PROFILES = (
     Profile("docente", "LAURA CASTILLO", "sur", _pesos(1_400_000), teacher, LONG_HISTORY),
     Profile("medica", "SOFIA ARANGO", "andino", _pesos(8_000_000), doctor, LONG_HISTORY),
     Profile("emprendedora", "MARIANA TORRES", "sur", _pesos(2_600_000), online_shop, LONG_HISTORY),
+    Profile("disenadora", "ISABELA RUIZ", "sur", _pesos(1_900_000), designer),
 )
 
 
