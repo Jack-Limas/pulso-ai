@@ -18,6 +18,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 SEED = 2026
 MONTHS = ((2026, 8), (2026, 9), (2026, 10))
+LONG_HISTORY = ((2026, 6), (2026, 7), *MONTHS)
 PAGE_TOP = 720
 PAGE_BOTTOM = 60
 ROW_HEIGHT = 14
@@ -37,6 +38,7 @@ class Profile:
     bank: str
     opening_cents: int
     build: Callable[[random.Random, int, int], list[Movement]]
+    months: tuple[tuple[int, int], ...] = MONTHS
 
 
 def _month_days(year: int, month: int) -> list[date]:
@@ -125,6 +127,87 @@ def family(rng: random.Random, year: int, month: int) -> list[Movement]:
     return moves
 
 
+def driver(rng: random.Random, year: int, month: int) -> list[Movement]:
+    days = _month_days(year, month)
+    moves = [
+        Movement(days[4], "CUOTA CREDITO VEHICULO", -_pesos(1_150_000)),
+        Movement(days[9], "SOAT SEGURO VEHICULO", -_pesos(58_000)),
+        Movement(days[11], "TIGO PLAN DATOS", -_pesos(55_000)),
+    ]
+    for day in days[::2]:
+        moves.append(Movement(day, "PAGO UBER DRIVER", _pesos(rng.randint(140_000, 260_000))))
+    for day in rng.sample(days, 9):
+        moves.append(Movement(day, "GASOLINA TERPEL", -_pesos(rng.randint(70_000, 110_000))))
+    for day in rng.sample(days, 7):
+        moves.append(Movement(day, "PEAJE AUTOPISTA", -_pesos(rng.choice((11_200, 13_400)))))
+    for day in rng.sample(days, 8):
+        moves.append(Movement(day, "TIENDA BARRIO EMPANADAS", -_pesos(rng.randint(4_500, 8_500))))
+    if month == 10:
+        moves.append(Movement(days[17], "TALLER MECANICO MOTOR", -_pesos(2_400_000)))
+    return moves
+
+
+def teacher(rng: random.Random, year: int, month: int) -> list[Movement]:
+    days = _month_days(year, month)
+    moves = [
+        Movement(days[14], "NOMINA SECRETARIA EDUCACION", _pesos(3_900_000)),
+        Movement(days[1], "SMARTFIT MEMBRESIA", -_pesos(79_900)),
+        Movement(days[3], "PAGO ARRIENDO APARTAESTUDIO", -_pesos(1_250_000)),
+        Movement(days[12], "CLARO HOGAR", -_pesos(99_900)),
+        Movement(days[18], "COURSERA PLUS", -_pesos(58_000)),
+    ]
+    for day in rng.sample(days, 9):
+        moves.append(Movement(day, "PANADERIA EL TRIGAL", -_pesos(rng.randint(5_000, 9_000))))
+    for day in rng.sample(days, 3):
+        moves.append(Movement(day, "LIBRERIA NACIONAL", -_pesos(rng.randint(35_000, 90_000))))
+    for week in range(4):
+        amount = -_pesos(rng.randint(90_000, 160_000))
+        moves.append(Movement(days[week * 7 + 5], "MERCADO D1", amount))
+    if month == 10:
+        moves.append(Movement(days[2], "SMARTFIT MEMBRESIA", -_pesos(79_900)))
+    return moves
+
+
+def doctor(rng: random.Random, year: int, month: int) -> list[Movement]:
+    days = _month_days(year, month)
+    moves = [
+        Movement(days[0], "HONORARIOS CLINICA CENTRAL", _pesos(11_500_000)),
+        Movement(days[15], "HONORARIOS CONSULTA PRIVADA", _pesos(rng.randint(2_000_000, 3_800_000))),
+        Movement(days[5], "CUOTA HIPOTECA APARTAMENTO", -_pesos(3_600_000)),
+        Movement(days[7], "MEDISALUD POLIZA", -_pesos(420_000)),
+        Movement(days[8], "NETFLIX COM", -_pesos(44_900)),
+        Movement(days[8], "SPOTIFY FAMILIAR", -_pesos(26_900)),
+    ]
+    for day in rng.sample(days, 6):
+        moves.append(Movement(day, "RESTAURANTE ANDRES", -_pesos(rng.randint(120_000, 260_000))))
+    for day in rng.sample(days, 10):
+        moves.append(Movement(day, "CAFE JUAN VALDEZ", -_pesos(rng.randint(9_000, 15_000))))
+    for day in rng.sample(days, 2):
+        moves.append(Movement(day, "FALABELLA COMPRAS", -_pesos(rng.randint(250_000, 600_000))))
+    if month == 10:
+        moves.append(Movement(days[21], "AVIANCA TIQUETES INTERNACIONALES", -_pesos(7_800_000)))
+    return moves
+
+
+def online_shop(rng: random.Random, year: int, month: int) -> list[Movement]:
+    days = _month_days(year, month)
+    moves = [
+        Movement(days[1], "SHOPIFY PLAN TIENDA", -_pesos(140_000)),
+        Movement(days[2], "META ADS PUBLICIDAD", -_pesos(rng.randint(450_000, 520_000))),
+        Movement(days[6], "SERVIENTREGA ENVIOS", -_pesos(rng.randint(300_000, 420_000))),
+        Movement(days[20], "SERVIENTREGA ENVIOS", -_pesos(rng.randint(300_000, 420_000))),
+    ]
+    for day in rng.sample(days, 14):
+        moves.append(Movement(day, "VENTAS WOMPI TIENDA", _pesos(rng.randint(180_000, 650_000))))
+    for day in rng.sample(days, 3):
+        moves.append(Movement(day, "PROVEEDOR TEXTILES", -_pesos(rng.randint(900_000, 1_600_000))))
+    for day in rng.sample(days, 6):
+        moves.append(Movement(day, "RAPPI RESTAURANTE", -_pesos(rng.randint(22_000, 38_000))))
+    if month == 10:
+        moves.append(Movement(days[24], "COMISION TRANSFERENCIA INTERNACIONAL", -_pesos(64_000)))
+    return moves
+
+
 def heavy(rng: random.Random, year: int, month: int) -> list[Movement]:
     """Two thousand movements, so the main thread versus Web Worker difference is visible."""
     days = _month_days(year, month)
@@ -141,6 +224,10 @@ PROFILES = (
     Profile("freelancer", "ANDRES GOMEZ", "sur", _pesos(3_200_000), freelancer),
     Profile("pyme", "PANADERIA LA ESPIGA SAS", "andino", _pesos(12_500_000), small_business),
     Profile("familia", "CAROLINA MEJIA", "sur", _pesos(2_100_000), family),
+    Profile("conductor", "JHON FREDY MUNOZ", "andino", _pesos(900_000), driver, LONG_HISTORY),
+    Profile("docente", "LAURA CASTILLO", "sur", _pesos(1_400_000), teacher, LONG_HISTORY),
+    Profile("medica", "SOFIA ARANGO", "andino", _pesos(8_000_000), doctor, LONG_HISTORY),
+    Profile("emprendedora", "MARIANA TORRES", "sur", _pesos(2_600_000), online_shop, LONG_HISTORY),
 )
 
 
@@ -155,7 +242,8 @@ def _american(cents: int) -> str:
 
 class StatementWriter:
     def __init__(self, path: Path, header: list[str], columns: str) -> None:
-        self._canvas = Canvas(str(path), pagesize=letter)
+        # invariant=1 leaves out timestamps, so the same data always yields the same bytes.
+        self._canvas = Canvas(str(path), pagesize=letter, invariant=1)
         self._header = header
         self._columns = columns
         self._page = 1
@@ -256,7 +344,7 @@ def generate(out: Path) -> list[Path]:
     for profile in PROFILES:
         rng = random.Random(f"{SEED}-{profile.slug}")
         balance = profile.opening_cents
-        for year, month in MONTHS:
+        for year, month in profile.months:
             moves = sorted(profile.build(rng, year, month), key=lambda move: move.day)
             path = out / f"{profile.slug}-{year}-{month:02d}.pdf"
             balance = WRITERS[profile.bank](path, profile, moves, balance)
