@@ -25,10 +25,21 @@ def test_october_hides_the_planted_findings():
     assert "AMAZON COMPRA CONSOLA" in descriptions["estudiante"]
     assert descriptions["freelancer"].count("NETFLIX COM") == 2
     assert "COMISION SOBREGIRO" in descriptions["pyme"]
+    assert "TALLER MECANICO MOTOR" in descriptions["conductor"]
+    assert descriptions["docente"].count("SMARTFIT MEMBRESIA") == 2
+    assert "AVIANCA TIQUETES INTERNACIONALES" in descriptions["medica"]
+    assert "COMISION TRANSFERENCIA INTERNACIONAL" in descriptions["emprendedora"]
 
 
 def test_writes_one_pdf_per_profile_and_month(tmp_path):
     files = generate(tmp_path)
 
-    assert len(files) == len(PROFILES) * 3 + 1
+    assert len(files) == sum(len(profile.months) for profile in PROFILES) + 1
     assert all(path.read_bytes().startswith(b"%PDF-") for path in files)
+
+
+def test_output_is_reproducible(tmp_path):
+    first = [path.read_bytes() for path in generate(tmp_path / "a")]
+    second = [path.read_bytes() for path in generate(tmp_path / "b")]
+
+    assert first == second
