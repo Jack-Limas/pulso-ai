@@ -111,6 +111,7 @@ class TestAnomalies:
         found = detect_anomalies(entries, as_category(entries), "es")
 
         assert [item.entry_id for item in found] == [outlier.id]
+        assert "$8.025" in found[0].reason
 
     def test_flags_an_outlier_when_every_other_amount_is_identical(self):
         normal = [expense(f"T{i}", 1_000_000) for i in range(6)]
