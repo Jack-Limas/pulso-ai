@@ -43,6 +43,9 @@ class RuleAdvisor:
     def advise(self, summary: FinancialSummary) -> list[Advice]:
         texts = TEXTS.get(summary.locale, TEXTS["es"])
 
+        def money(cents: int) -> str:
+            return _money(cents, summary.locale)
+
         def build(key: str, **values: object) -> Advice:
             title, detail = texts[key]
             return Advice(title.format(**values), detail.format(**values))
@@ -56,11 +59,11 @@ class RuleAdvisor:
         if summary.anomaly_count:
             advice.append(build("anomalies", count=summary.anomaly_count))
         if summary.recurring_total_cents:
-            advice.append(build("recurring", amount=_money(summary.recurring_total_cents, summary.locale)))
+            advice.append(build("recurring", amount=money(summary.recurring_total_cents)))
         if summary.ant_total_cents:
-            advice.append(build("ant", amount=_money(summary.ant_total_cents, summary.locale)))
+            advice.append(build("ant", amount=money(summary.ant_total_cents)))
         if summary.projected_cents < 0:
-            advice.append(build("negative", amount=_money(summary.projected_cents, summary.locale)))
+            advice.append(build("negative", amount=money(summary.projected_cents)))
         return advice[:MAX_ADVICE]
 
 
