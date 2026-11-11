@@ -260,6 +260,13 @@ class TestAdvice:
 
         assert advice[0].title == "Ahorra"
 
+    def test_model_advice_wrapped_in_an_object_is_accepted(self):
+        model = StubModel({"tips": [{"title": "Ahorra", "detail": "Cocina en casa"}]})
+
+        advice = GeminiAdvisor(model, RuleAdvisor()).advise(summary())
+
+        assert advice[0].title == "Ahorra"
+
     @pytest.mark.parametrize(
         "model",
         [StubModel(error=RuntimeError("down")), StubModel("not a list"), StubModel([{"x": 1}])],
