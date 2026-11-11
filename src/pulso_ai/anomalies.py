@@ -10,6 +10,7 @@ MIN_SAMPLES_FOR_OUTLIER = 5
 MODIFIED_ZSCORE_THRESHOLD = 3.5
 MODIFIED_ZSCORE_SCALE = 0.6745
 MIN_RATIO_TO_MEDIAN = 2
+MIN_MERCHANT_HISTORY = 3
 DUPLICATE_WINDOW_DAYS = 2
 MIN_HISTORY_FOR_NEW_FEE = 10
 MIN_SAMPLES_FOR_FOREST = 30
@@ -45,12 +46,36 @@ def detect_anomalies(
     category_of = {item.entry_id: item.category for item in categorized}
     expenses = [entry for entry in entries if entry.kind is EntryKind.EXPENSE]
 
+    habitual = _habitual_ids(expenses)
     # Later detectors never overwrite an earlier one: the most explainable reason wins.
     found: dict[str, Anomaly] = {}
     for detector in (_high_amounts, _duplicates, _new_fees, _isolation_forest):
+        judges_amount = detector in (_high_amounts, _isolation_forest)
         for anomaly in detector(expenses, category_of, texts):
+            if judges_amount and anomaly.entry_id in habitual:
+                continue
             found.setdefault(anomaly.entry_id, anomaly)
     return list(found.values())
+
+
+def _habitual_ids(expenses: list[Entry]) -> set[str]:
+    """A charge is habitual when it is in line with what this merchant usually costs.
+
+    Categories mix very different merchants (a coffee and a food delivery are both "food"),
+    so a merchant with its own history is judged against itself first.
+    """
+    by_merchant: dict[str, list[Entry]] = defaultdict(list)
+    for entry in expenses:
+        by_merchant[entry.merchant].append(entry)
+    habitual = set()
+    for group in by_merchant.values():
+        if len(group) < MIN_MERCHANT_HISTORY:
+            continue
+        usual = median(entry.amount_cents for entry in group)
+        habitual.update(
+            entry.id for entry in group if entry.amount_cents < usual * MIN_RATIO_TO_MEDIAN
+        )
+    return habitual
 
 
 def _high_amounts(
