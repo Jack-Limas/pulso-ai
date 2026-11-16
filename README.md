@@ -71,6 +71,8 @@ flowchart LR
 | Comisión nueva | Texto de comisión o sobregiro en un comercio que nunca había aparecido | Cargos bancarios inesperados |
 | Isolation Forest | scikit-learn sobre valor y frecuencia, con al menos 30 gastos | Combinaciones raras que una sola regla no ve |
 
+Si una categoría tiene muy pocos gastos para compararlos entre sí, el monto se compara con **todos los gastos del periodo**. Así, la compra grande de un usuario nuevo también puede destacarse. Se excluyen vivienda, servicios, educación y salud, porque un arriendo o una matrícula son grandes pero esperables.
+
 Antes de reportar un monto, cada gasto se compara también con **lo que esa persona suele pagar en ese mismo comercio**. Una categoría mezcla comercios muy distintos: un café y un pedido a domicilio son ambos "alimentación". Sin esta comparación, los pedidos normales aparecían como inusuales.
 
 ### Privacidad con Gemini
@@ -107,6 +109,8 @@ Cada perfil esconde hallazgos conocidos que el análisis debe encontrar:
 ```bash
 python scripts/generate_statements.py --out output
 ```
+
+Además, `output/samples/` trae dos extractos **"a la fecha" con corte al 15 de noviembre de 2026**, uno por banco. Son los que se descargan desde la app y cada uno esconde un hallazgo: una compra inusual y un cobro duplicado.
 
 El mismo dato siempre produce los mismos bytes (`invariant=1`), así el hash del archivo es estable.
 
