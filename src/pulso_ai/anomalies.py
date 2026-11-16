@@ -13,6 +13,13 @@ MIN_RATIO_TO_MEDIAN = 2
 MIN_MERCHANT_HISTORY = 2
 # Large and expected: a rent or a tuition is not unusual just because it is the biggest charge.
 FIXED_COST_CATEGORIES = frozenset({"housing", "utilities", "education", "health"})
+# Scheduled payments are large by nature; without history they look like outliers but are not.
+SCHEDULED_PAYMENT_WORDS = frozenset(
+    {"NOMINA", "CUOTA", "CREDITO", "HIPOTECA", "ARRIENDO", "SEGURO", "PENSION", "SOAT",
+     "SUSCRIPCION", "SUBSCRIPTION", "MEMBRESIA", "PLAN", "CLOUD", "SERVICES", "POLIZA"}
+)
+FREQUENT_WINDOW_DAYS = 30
+FREQUENT_MIN_CHARGES = 4
 DUPLICATE_WINDOW_DAYS = 2
 MIN_HISTORY_FOR_NEW_FEE = 10
 MIN_SAMPLES_FOR_FOREST = 30
@@ -50,13 +57,14 @@ def detect_anomalies(
     category_of = {item.entry_id: item.category for item in categorized}
     expenses = [entry for entry in entries if entry.kind is EntryKind.EXPENSE]
 
-    habitual = _habitual_ids(expenses)
+    # Amount detectors skip what is expected: a merchant's usual price or a scheduled payment.
+    expected = _habitual_ids(expenses) | {entry.id for entry in expenses if _is_scheduled(entry)}
     # Later detectors never overwrite an earlier one: the most explainable reason wins.
     found: dict[str, Anomaly] = {}
     for detector in (_high_amounts, _duplicates, _new_fees, _isolation_forest):
         judges_amount = detector in (_high_amounts, _isolation_forest)
         for anomaly in detector(expenses, category_of, texts):
-            if judges_amount and anomaly.entry_id in habitual:
+            if judges_amount and anomaly.entry_id in expected:
                 continue
             found.setdefault(anomaly.entry_id, anomaly)
     return list(found.values())
@@ -109,6 +117,10 @@ def _outliers(
     return anomalies
 
 
+def _is_scheduled(entry: Entry) -> bool:
+    return not SCHEDULED_PAYMENT_WORDS.isdisjoint(entry.description.upper().split())
+
+
 def _high_amounts(
     expenses: list[Entry], category_of: dict[str, str], texts: dict[str, str]
 ) -> list[Anomaly]:
@@ -133,12 +145,29 @@ def _high_amounts(
 def _duplicates(
     expenses: list[Entry], _category_of: dict[str, str], texts: dict[str, str]
 ) -> list[Anomaly]:
+    dates_by_merchant: dict[str, list] = defaultdict(list)
+    for entry in expenses:
+        dates_by_merchant[entry.merchant].append(entry.occurred_on)
+
+    def is_frequent(entry: Entry) -> bool:
+        # Tolls or coffees repeat by habit: the same amount twice is not a double charge there.
+        nearby = [
+            day
+            for day in dates_by_merchant[entry.merchant]
+            if abs((entry.occurred_on - day).days) <= FREQUENT_WINDOW_DAYS
+        ]
+        return len(nearby) >= FREQUENT_MIN_CHARGES
+
     last_seen: dict[tuple[str, int], Entry] = {}
     anomalies = []
     for entry in sorted(expenses, key=lambda item: item.occurred_on):
         key = (entry.merchant, entry.amount_cents)
         previous = last_seen.get(key)
-        if previous and (entry.occurred_on - previous.occurred_on).days <= DUPLICATE_WINDOW_DAYS:
+        if (
+            previous
+            and (entry.occurred_on - previous.occurred_on).days <= DUPLICATE_WINDOW_DAYS
+            and not is_frequent(entry)
+        ):
             reason = texts["duplicate"].format(days=DUPLICATE_WINDOW_DAYS + 1)
             anomalies.append(Anomaly(entry.id, reason, 1.0))
         last_seen[key] = entry
