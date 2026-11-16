@@ -73,7 +73,7 @@ flowchart LR
 
 Si una categoría tiene muy pocos gastos para compararlos entre sí, el monto se compara con **todos los gastos del periodo**. Así, la compra grande de un usuario nuevo también puede destacarse. Se excluyen vivienda, servicios, educación y salud, porque un arriendo o una matrícula son grandes pero esperables.
 
-Antes de reportar un monto, cada gasto se compara también con **lo que esa persona suele pagar en ese mismo comercio**. Una categoría mezcla comercios muy distintos: un café y un pedido a domicilio son ambos "alimentación". Sin esta comparación, los pedidos normales aparecían como inusuales.
+Antes de reportar un monto, cada gasto se compara también con **lo que esa persona suele pagar en ese mismo comercio**. Tampoco se reportan por su monto los **pagos programados** (nómina, cuotas, créditos, arriendo, seguros, planes y suscripciones), y un comercio que se repite por hábito, como peajes o cafés, no genera alertas de "duplicado". Una categoría mezcla comercios muy distintos: un café y un pedido a domicilio son ambos "alimentación". Sin esta comparación, los pedidos normales aparecían como inusuales.
 
 ### Privacidad con Gemini
 
