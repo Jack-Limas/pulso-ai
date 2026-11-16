@@ -26,7 +26,7 @@ MODEL_BATCH_SIZE = 50
 KEYWORDS: dict[str, tuple[str, ...]] = {
     "food": ("STARBUCKS", "CAFE", "RESTAURANTE", "PANADERIA", "RAPPI", "EXITO", "D1", "ARA"),
     "transport": ("UBER", "DIDI", "TAXI", "TRANSMILENIO", "GASOLINA", "PEAJE"),
-    "housing": ("ARRIENDO", "ADMINISTRACION", "HIPOTECA"),
+    "housing": ("ARRIENDO", "ADMINISTRACION", "HIPOTECA", "COWORKING"),
     "entertainment": ("NETFLIX", "SPOTIFY", "DISNEY", "CINE", "STEAM", "HBO"),
     "utilities": ("ENERGIA", "ACUEDUCTO", "GAS", "CLARO", "MOVISTAR", "TIGO"),
     "health": ("FARMACIA", "DROGUERIA", "CLINICA", "EPS"),
