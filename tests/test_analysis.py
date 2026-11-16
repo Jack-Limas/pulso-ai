@@ -145,6 +145,32 @@ class TestAnomalies:
 
         assert [item.entry_id for item in found] == [party.id]
 
+    def test_flags_a_lone_big_purchase_against_all_spending(self):
+        coffees = [expense(f"CAFE {i}", 800_000 + i * 1000) for i in range(6)]
+        console = expense("AMAZON", 185_000_000)
+        entries = [*coffees, console]
+        categorized = [*as_category(coffees, "food"), *as_category([console], "shopping")]
+
+        found = detect_anomalies(entries, categorized, "es")
+
+        assert [item.entry_id for item in found] == [console.id]
+        assert "gasto habitual" in found[0].reason
+
+    def test_a_large_fixed_bill_is_not_unusual_without_history(self):
+        coffees = [expense(f"CAFE {i}", 800_000 + i * 1000) for i in range(6)]
+        tuition = expense("UNIVERSIDAD", 35_000_000)
+        entries = [*coffees, tuition]
+        categorized = [*as_category(coffees, "food"), *as_category([tuition], "education")]
+
+        assert detect_anomalies(entries, categorized, "es") == []
+
+    def test_two_similar_orders_at_a_merchant_are_habitual(self):
+        coffees = [expense(f"CAFE {i}", 800_000 + i * 1000) for i in range(6)]
+        orders = [expense("RAPPI", 2_600_000), expense("RAPPI", 3_900_000)]
+        entries = [*coffees, *orders]
+
+        assert detect_anomalies(entries, as_category(entries), "es") == []
+
     def test_flags_second_charge_of_a_duplicate(self):
         first = expense("NETFLIX", 4_000_000, date(2026, 10, 1))
         second = expense("NETFLIX", 4_000_000, date(2026, 10, 2))
