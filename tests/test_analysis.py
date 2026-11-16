@@ -164,6 +164,18 @@ class TestAnomalies:
 
         assert detect_anomalies(entries, categorized, "es") == []
 
+    def test_a_scheduled_payment_is_not_unusual_without_history(self):
+        coffees = [expense(f"CAFE {i}", 800_000 + i * 1000) for i in range(6)]
+        payroll = expense("NOMINA", 640_000_000, description="PAGO NOMINA EMPLEADOS")
+        entries = [*coffees, payroll]
+
+        assert detect_anomalies(entries, as_category(entries, "other"), "es") == []
+
+    def test_repeated_tolls_are_not_duplicates(self):
+        tolls = [expense("PEAJE", 1_120_000, date(2026, 10, day)) for day in (2, 3, 9, 10, 20)]
+
+        assert detect_anomalies(tolls, as_category(tolls, "transport"), "es") == []
+
     def test_two_similar_orders_at_a_merchant_are_habitual(self):
         coffees = [expense(f"CAFE {i}", 800_000 + i * 1000) for i in range(6)]
         orders = [expense("RAPPI", 2_600_000), expense("RAPPI", 3_900_000)]
