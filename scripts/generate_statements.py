@@ -304,15 +304,17 @@ class StatementWriter:
         self._canvas.save()
 
 
-def write_andino(path: Path, profile: Profile, moves: list[Movement], opening: int) -> int:
+def write_andino(
+    path: Path, profile: Profile, moves: list[Movement], opening: int, cutoff: date | None = None
+) -> int:
     first, last = moves[0].day.replace(day=1), max(m.day for m in moves)
-    period_end = _month_days(first.year, first.month)[-1]
+    period_end = cutoff or _month_days(first.year, first.month)[-1]
     header = [
         "BANCO ANDINO",
         "Extracto de cuenta de ahorros",
         f"Titular: {profile.holder}",
         "Cuenta: ****4821",
-        f"Periodo: {first:%d/%m/%Y} - {max(last, period_end):%d/%m/%Y}",
+        f"Periodo: {first:%d/%m/%Y} - {period_end if cutoff else max(last, period_end):%d/%m/%Y}",
         f"Saldo anterior: $ {_colombian(opening)}",
     ]
     columns = "Fecha        Descripción                       Valor        Saldo"
@@ -332,9 +334,11 @@ def write_andino(path: Path, profile: Profile, moves: list[Movement], opening: i
     return balance
 
 
-def write_sur(path: Path, profile: Profile, moves: list[Movement], opening: int) -> int:
+def write_sur(
+    path: Path, profile: Profile, moves: list[Movement], opening: int, cutoff: date | None = None
+) -> int:
     first = moves[0].day.replace(day=1)
-    period_end = _month_days(first.year, first.month)[-1]
+    period_end = cutoff or _month_days(first.year, first.month)[-1]
     header = [
         "COOPERATIVA SUR",
         "Estado de cuenta de ahorro cooperativo",
@@ -362,6 +366,43 @@ def write_sur(path: Path, profile: Profile, moves: list[Movement], opening: int)
 WRITERS = {"andino": write_andino, "sur": write_sur}
 
 
+SAMPLE_CUTOFF = date(2026, 11, 15)
+
+
+def _sample_moves(
+    profile: Profile, planted: list[Movement], rng: random.Random
+) -> list[Movement]:
+    month = profile.build(rng, SAMPLE_CUTOFF.year, SAMPLE_CUTOFF.month)
+    moves = [move for move in month if move.day <= SAMPLE_CUTOFF] + planted
+    return sorted(moves, key=lambda move: move.day)
+
+
+def generate_samples(out: Path) -> list[Path]:
+    """Statements "to date" that anyone can download and try, cut at mid November."""
+    out.mkdir(parents=True, exist_ok=True)
+    student_profile, freelancer_profile = PROFILES[0], PROFILES[1]
+    samples = (
+        (
+            student_profile,
+            "extracto-banco-andino.pdf",
+            [Movement(date(2026, 11, 12), "AMAZON COMPRA CONSOLA", -_pesos(1_850_000))],
+        ),
+        (
+            freelancer_profile,
+            "extracto-cooperativa-sur.pdf",
+            [Movement(date(2026, 11, 14), "NETFLIX COM", -_pesos(44_900))],
+        ),
+    )
+    files = []
+    for profile, name, planted in samples:
+        rng = random.Random(f"{SEED}-sample-{profile.slug}")
+        moves = _sample_moves(profile, planted, rng)
+        path = out / name
+        WRITERS[profile.bank](path, profile, moves, profile.opening_cents, SAMPLE_CUTOFF)
+        files.append(path)
+    return files
+
+
 def generate(out: Path) -> list[Path]:
     out.mkdir(parents=True, exist_ok=True)
     files = []
@@ -385,7 +426,8 @@ def generate(out: Path) -> list[Path]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=Path("output"))
-    for path in generate(parser.parse_args().out):
+    out = parser.parse_args().out
+    for path in [*generate(out), *generate_samples(out / "samples")]:
         print(path)
 
 

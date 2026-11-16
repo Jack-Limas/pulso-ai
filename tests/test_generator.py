@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from generate_statements import PROFILES, generate  # noqa: E402
+from generate_statements import PROFILES, SAMPLE_CUTOFF, generate, generate_samples  # noqa: E402
 
 
 def test_same_seed_gives_the_same_movements():
@@ -45,3 +45,14 @@ def test_output_is_reproducible(tmp_path):
     second = [path.read_bytes() for path in generate(tmp_path / "b")]
 
     assert first == second
+
+
+def test_samples_are_cut_at_mid_november(tmp_path):
+    files = generate_samples(tmp_path)
+
+    assert [path.name for path in files] == [
+        "extracto-banco-andino.pdf",
+        "extracto-cooperativa-sur.pdf",
+    ]
+    assert SAMPLE_CUTOFF.isoformat() == "2026-11-15"
+    assert all(path.read_bytes().startswith(b"%PDF-") for path in files)
